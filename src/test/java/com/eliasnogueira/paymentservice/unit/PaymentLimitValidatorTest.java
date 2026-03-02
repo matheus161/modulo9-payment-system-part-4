@@ -46,4 +46,25 @@ public class PaymentLimitValidatorTest {
                 .isInstanceOf(PaymentLimitException.class)
                 .hasMessage("Amount must be greater than zero");
     }
+
+    @Test
+    void shouldAcceptAmountBelowTheLimit() {
+        BigDecimal limit = new BigDecimal("1999.00");
+        boolean isWithinLimit = PaymentLimitValidator.isWithinLimit(limit);
+        assertThat(isWithinLimit).isTrue();
+    }
+
+    @Test
+    void shouldAcceptAmountEqualToLimit() {
+        BigDecimal limit = new BigDecimal("2000.00");
+        boolean isWithinLimit = PaymentLimitValidator.isWithinLimit(limit);
+        assertThat(isWithinLimit).isTrue();
+    }
+
+    @Test
+    void shouldNotAcceptOutOfLimit() {
+        BigDecimal limit = new BigDecimal("2000.01");
+        boolean isWithinLimit = PaymentLimitValidator.isWithinLimit(limit);
+        assertThat(isWithinLimit).isFalse();
+    }
 }
