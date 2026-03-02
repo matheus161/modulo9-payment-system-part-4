@@ -1,6 +1,7 @@
 package com.eliasnogueira.paymentservice.unit;
 
 import com.eliasnogueira.paymentservice.dto.PaymentRequest;
+import com.eliasnogueira.paymentservice.exceptions.PaymentLimitException;
 import com.eliasnogueira.paymentservice.model.enums.PaymentSource;
 import com.eliasnogueira.paymentservice.model.enums.PaymentStatus;
 import com.eliasnogueira.paymentservice.repository.PaymentRepository;
@@ -50,4 +51,50 @@ public class PaymentServiceTest {
 
         verify(paymentRepository).save(any());
     }
+
+    @Test
+    @DisplayName("Should not save a payment when limit is exceeded")
+    void shouldNotSavePaymentWhenLimitIsExceeded() {
+        when(paymentRepository.sumPaymentsByPayerIdAndDate(any(), any(), any()))
+                .thenReturn(new BigDecimal("200.00"));
+
+        var paymentRequest = PaymentRequest.builder()
+                .payerId(UUID.randomUUID())
+                .paymentSource(PaymentSource.PIX)
+                .amount(new BigDecimal("2500.00"))
+                .build();
+
+        assertThatThrownBy(() -> paymentService.createPayment(paymentRequest))
+                .isInstanceOf(PaymentLimitException.class)
+                .hasMessageContaining("Daily payment limit exceeded for source:");
+    }
+
+    @Test
+    @DisplayName("Should not save payment when amount is zero")
+    void shouldSavePaymentWhenAmountIsZero() {
+        var paymentRequest = PaymentRequest.builder()
+                .payerId(UUID.randomUUID())
+                .paymentSource(PaymentSource.PIX)
+                .amount(BigDecimal.ZERO)
+                .build();
+
+        assertThatThrownBy(() -> paymentService.createPayment(paymentRequest))
+                .isInstanceOf(PaymentLimitException.class)
+                .hasMessage("Amount must be greater than zero");
+    }
+
+    @Test
+    @DisplayName("Should not save payment when amount is negative")
+    void shouldNotSavePaymentWhenAmountIsNegative() {
+        var paymentRequest = PaymentRequest.builder()
+                .payerId(UUID.randomUUID())
+                .paymentSource(PaymentSource.PIX)
+                .amount(new  BigDecimal("-2500.00"))
+                .build();
+
+        assertThatThrownBy(() -> paymentService.createPayment(paymentRequest))
+                .isInstanceOf(PaymentLimitException.class)
+                .hasMessage("Amount must be greater than zero");
+    }
+
 }
