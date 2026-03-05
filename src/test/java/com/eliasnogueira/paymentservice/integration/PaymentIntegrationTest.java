@@ -1,6 +1,5 @@
 package com.eliasnogueira.paymentservice.integration;
 
-import com.eliasnogueira.paymentservice.dto.PaymentRequest;
 import com.eliasnogueira.paymentservice.dto.PaymentResponse;
 import com.eliasnogueira.paymentservice.dto.PaymentUpdateRequest;
 import com.eliasnogueira.paymentservice.model.Payment;
@@ -8,9 +7,6 @@ import com.eliasnogueira.paymentservice.model.enums.PaymentSource;
 import com.eliasnogueira.paymentservice.model.enums.PaymentStatus;
 import com.eliasnogueira.paymentservice.repository.PaymentRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.assertj.core.api.AssertionsForInterfaceTypes;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
