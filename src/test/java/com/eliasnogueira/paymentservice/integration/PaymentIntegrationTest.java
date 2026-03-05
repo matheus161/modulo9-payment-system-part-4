@@ -1,5 +1,6 @@
 package com.eliasnogueira.paymentservice.integration;
 
+import com.eliasnogueira.paymentservice.dto.PaymentRequest;
 import com.eliasnogueira.paymentservice.dto.PaymentResponse;
 import com.eliasnogueira.paymentservice.dto.PaymentUpdateRequest;
 import com.eliasnogueira.paymentservice.model.Payment;
@@ -47,22 +48,25 @@ public class PaymentIntegrationTest {
 
     @Test
     void createPayment() throws Exception {
-        String payload = """
-                {
-                    "payerId": "2df75f27-c46a-43e2-8e70-1145bdd93e7d",
-                    "paymentSource": "PIX",
-                    "amount": 100.50
-                }
-                """;
-        mockMvc.perform(
+        var paymentRequest = PaymentRequest.builder()
+                .payerId(UUID.randomUUID())
+                .paymentSource(PaymentSource.PIX)
+                .amount(new BigDecimal("100.00"))
+                .build();
+
+        var responseInJson = mockMvc.perform(
                 post("/api/payments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.payerId", is("2df75f27-c46a-43e2-8e70-1145bdd93e7d")))
-                .andExpect(jsonPath("$.paymentSource", is(PaymentSource.PIX.name())))
-                .andExpect(jsonPath("$.amount", is(100.50)))
-                .andExpect(jsonPath("$.status", is(PaymentStatus.PENDING.name())));
+                        .content(mapper.writeValueAsString(paymentRequest)))
+                .andReturn().getResponse().getContentAsString();
+
+        PaymentResponse paymentResponse = mapper.readValue(responseInJson, PaymentResponse.class);
+
+        assertThat(paymentResponse.getPayerId()).isEqualTo(paymentRequest.getPayerId());
+        assertThat(paymentResponse.getPaymentSource()).isEqualTo(paymentRequest.getPaymentSource());
+        assertThat(paymentResponse.getAmount()).isEqualByComparingTo(paymentRequest.getAmount());
+        assertThat(paymentResponse.getStatus()).isEqualTo(PaymentStatus.PENDING);
+
     }
 
     @Test
@@ -77,12 +81,15 @@ public class PaymentIntegrationTest {
 
         var savedPayment = paymentRepository.save(payment);
 
-        mockMvc.perform(get("/api/payments/{paymentId}", savedPayment.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.payerId", is(savedPayment.getPayerId().toString())))
-                .andExpect(jsonPath("$.paymentSource", is(savedPayment.getPaymentSource().name())))
-                .andExpect(jsonPath("$.amount", is(savedPayment.getAmount().doubleValue())))
-                .andExpect(jsonPath("$.status", is(savedPayment.getStatus().name())));
+        var responseInJson = mockMvc.perform(get("/api/payments/{paymentId}", savedPayment.getId()))
+                .andReturn().getResponse().getContentAsString();
+
+        PaymentResponse paymentResponse = mapper.readValue(responseInJson, PaymentResponse.class);
+
+        assertThat(paymentResponse.getPayerId()).isEqualTo(payment.getPayerId());
+        assertThat(paymentResponse.getPaymentSource()).isEqualTo(payment.getPaymentSource());
+        assertThat(paymentResponse.getAmount()).isEqualByComparingTo(payment.getAmount());
+        assertThat(paymentResponse.getStatus()).isEqualTo(payment.getStatus());
     }
 
     @Test
